@@ -5,7 +5,6 @@ import dns.resolver
 from colorama import Fore, Style, init
 from bs4 import BeautifulSoup
 
-# Fix untuk error 'collections' di Python terbaru
 import collections
 if not hasattr(collections, 'Callable'):
     import collections.abc
@@ -23,7 +22,7 @@ init(autoreset=True)
 class ReddotIP:
     def __init__(self):
         self.developer = "Deathnihilist"
-        self.version = "2.0.0 (No-API Edition)"
+        self.version = "2.1.0 (Shared Server Hunter)"
 
     def banner(self):
         clear_screen()
@@ -47,66 +46,55 @@ class ReddotIP:
         return False
 
     def dns_recon(self, domain):
-        """Mencari kebocoran IP melalui MX dan Subdomain standar"""
+        ip_found = None
         print_status("Performing DNS Reconnaissance...", "info")
-        
-        # 1. Cek MX Records (Email Server)
         try:
-            print_status("Checking MX Records (Mail Leak)...", "info")
-            answers = dns.resolver.resolve(domain, 'MX')
-            for rdata in answers:
-                mx_host = str(rdata.exchange).rstrip('.')
-                mx_ip = socket.gethostbyname(mx_host)
-                print_status(f"Mail Server Found: {mx_host} -> {mx_ip}", "success")
-                save_result(domain, f"MX Leak: {mx_ip}")
-        except:
-            print(f"{Fore.YELLOW}[!] No MX Records found.")
+            ip_found = socket.gethostbyname(domain)
+            print_status(f"Direct IP Resolution: {ip_found}", "success")
+        except: pass
+        return ip_found
 
-        # 2. Cek Subdomain Umum (Brute Force Ringan)
-        subdomains = ['mail', 'dev', 'webmail', 'cpanel', 'direct', 'test', 'admin']
-        print_status("Bruteforcing common subdomains...", "info")
-        for sub in subdomains:
-            try:
-                sub_domain = f"{sub}.{domain}"
-                ip = socket.gethostbyname(sub_domain)
-                print_status(f"Subdomain Found: {sub_domain} -> {ip}", "success")
-                save_result(domain, f"Subdomain Discovery: {sub_domain} ({ip})")
-            except:
-                continue
-
-    def viewdns_scraper(self, domain):
-        """Scraping IP History (Fixed Logic)"""
-        print_status("Checking ViewDNS IP History...", "info")
+    def reverse_ip_hunter(self, ip):
+        """Mencari website tetangga di server yang sama untuk target Symlink"""
+        print_status(f"Scanning Server Neighbors on {ip}...", "info")
         try:
-            url = f"https://viewdns.info/iphistory/?domain={domain}"
-            headers = {"User-Agent": "Mozilla/5.0"}
-            r = requests.get(url, headers=headers, timeout=10)
-            soup = BeautifulSoup(r.text, 'html.parser')
-            table = soup.find('table', {'border': '1'})
-            if table:
-                rows = table.find_all('tr')[2:]
-                for row in rows:
-                    cols = row.find_all('td')
-                    ip = cols[0].text.strip()
-                    owner = cols[2].text.strip()
-                    if "cloudflare" not in owner.lower():
-                        print_status(f"Historical IP Found: {ip} ({owner})", "success")
-                        save_result(domain, f"ViewDNS Match: {ip}")
+            url = f"https://api.hackertarget.com/reverseiplookup/?q={ip}"
+            r = requests.get(url, timeout=10)
+            
+            if r.status_code == 200 and "API count exceeded" not in r.text and "No records" not in r.text:
+                domains = r.text.strip().split('\n')
+                print_status(f"Found {len(domains)} other websites on this server!", "success")
+                
+                # Menampilkan 10 tetangga pertama agar terminal tidak banjir
+                for d in domains[:10]:
+                    print(f"{Fore.CYAN}   [+] Neighbor: {d}")
+                
+                if len(domains) > 10:
+                    print(f"{Fore.YELLOW}   ... and {len(domains)-10} more. (Results saved to logs)")
+                    
+                save_result(ip, f"Neighbors Found: {', '.join(domains)}")
             else:
-                print(f"{Fore.YELLOW}[!] No history found.")
+                print(f"{Fore.YELLOW}[!] Server looks isolated or API limit reached.")
         except Exception as e:
-            print_status(f"ViewDNS Scraper Error: {e}", "error")
+            print_status(f"Neighbor Scan Error: {e}", "error")
 
     def scan(self, target):
         target = target.replace("https://", "").replace("http://", "").split('/')[0]
         
-        if self.check_cloudflare(target):
-            print(f"{Fore.RED}[!] Cloudflare Detected! Starting Bypass Logic...")
+        is_cf = self.check_cloudflare(target)
+        if is_cf:
+            print(f"{Fore.RED}[!] Cloudflare Detected! Target is hiding. Initiating Deep DNS Scan...")
         else:
             print(f"{Fore.GREEN}[+] No Cloudflare detected. Target is exposed.")
 
-        self.dns_recon(target)
-        self.viewdns_scraper(target)
+        # Ambil IP
+        target_ip = self.dns_recon(target)
+        
+        # Kalau tidak pakai Cloudflare, langsung sikat tetangganya
+        if not is_cf and target_ip:
+            self.reverse_ip_hunter(target_ip)
+        elif is_cf:
+            print(f"{Fore.YELLOW}[!] Bypassing techniques needed to find real IP before neighbor scan.")
 
 if __name__ == "__main__":
     scanner = ReddotIP()
