@@ -51,7 +51,7 @@ class ReddotFramework:
         mod_info = self.MODULE_MAP[choice]
         try:
             # Dynamic Import: Memanggil file hanya saat dibutuhkan (Licin!)
-            module = importlib.import_lib(mod_info['file'])
+            module = importlib.import_module(mod_info['file'])
             instance_class = getattr(module, mod_info['class'])
             
             # Menjalankan modul
