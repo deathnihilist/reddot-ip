@@ -22,7 +22,7 @@ init(autoreset=True)
 class ReddotIP:
     def __init__(self):
         self.developer = "Deathnihilist"
-        self.version = "2.1.0 (Shared Server Hunter)"
+        self.version = "2.2.0 (Grid Display Mode)"
 
     def banner(self):
         clear_screen()
@@ -55,7 +55,7 @@ class ReddotIP:
         return ip_found
 
     def reverse_ip_hunter(self, ip):
-        """Mencari website tetangga di server yang sama untuk target Symlink"""
+        """Mencari website tetangga dengan tampilan Grid matrix"""
         print_status(f"Scanning Server Neighbors on {ip}...", "info")
         try:
             url = f"https://api.hackertarget.com/reverseiplookup/?q={ip}"
@@ -63,15 +63,24 @@ class ReddotIP:
             
             if r.status_code == 200 and "API count exceeded" not in r.text and "No records" not in r.text:
                 domains = r.text.strip().split('\n')
-                print_status(f"Found {len(domains)} other websites on this server!", "success")
+                print_status(f"Found {len(domains)} other websites on this server!\n", "success")
                 
-                # Menampilkan 10 tetangga pertama agar terminal tidak banjir
-                for d in domains[:10]:
-                    print(f"{Fore.CYAN}   [+] Neighbor: {d}")
+                # ===== GRID SYSTEM CONFIGURATION =====
+                columns = 4          # Jumlah website menyamping
+                col_width = 35       # Lebar tiap kolom (menjaga agar teks sejajar)
                 
-                if len(domains) > 10:
-                    print(f"{Fore.YELLOW}   ... and {len(domains)-10} more. (Results saved to logs)")
+                print(Fore.CYAN, end="") # Set warna list menjadi Cyan
+                
+                # Looping untuk memotong list domain menjadi barisan (chunks)
+                for i in range(0, len(domains), columns):
+                    chunk = domains[i:i+columns]
+                    # Gabungkan website dalam 1 baris, beri spasi ljust() agar rata
+                    row_str = "".join(str(d).ljust(col_width) for d in chunk)
+                    print(f"  {row_str}")
                     
+                print(Style.RESET_ALL) # Kembalikan warna terminal ke asal
+                # =====================================
+                
                 save_result(ip, f"Neighbors Found: {', '.join(domains)}")
             else:
                 print(f"{Fore.YELLOW}[!] Server looks isolated or API limit reached.")
@@ -87,10 +96,8 @@ class ReddotIP:
         else:
             print(f"{Fore.GREEN}[+] No Cloudflare detected. Target is exposed.")
 
-        # Ambil IP
         target_ip = self.dns_recon(target)
         
-        # Kalau tidak pakai Cloudflare, langsung sikat tetangganya
         if not is_cf and target_ip:
             self.reverse_ip_hunter(target_ip)
         elif is_cf:
