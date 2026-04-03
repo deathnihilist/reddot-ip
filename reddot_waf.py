@@ -2,7 +2,7 @@ import requests
 import urllib3
 from colorama import Fore, Style, init
 
-# Sembunyikan warning SSL
+# Suppress insecure SSL warnings
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 init(autoreset=True)
 
@@ -13,7 +13,7 @@ class ReddotWAF:
         self.headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
         }
-        # Payload agresif untuk memicu reaksi WAF (XSS, SQLi, LFI)
+        # Aggressive payloads to trigger WAF reactions (XSS, SQLi, LFI)
         self.malicious_payloads = {
             "XSS": "<script>alert('Reddot')</script>",
             "SQLi": "UNION SELECT ALL FROM information_schema.tables--",
@@ -26,7 +26,7 @@ class ReddotWAF:
         print(f"{colors.get(status)}{prefix.get(status)} {msg}")
 
     def detect_by_headers(self):
-        """Kaki 1: Deteksi identitas melalui HTTP Fingerprint"""
+        """Leg 1: Detect identity via HTTP Fingerprinting"""
         self.log("Ripping headers for WAF signatures...", "info")
         try:
             r = requests.get(self.url, headers=self.headers, timeout=10, verify=False)
@@ -49,17 +49,16 @@ class ReddotWAF:
         except: return None
 
     def attack_test(self):
-        """Kaki 2: Agresif - Mencoba memicu blokade untuk konfirmasi WAF"""
+        """Leg 2: Aggressive - Trigger blockade to confirm WAF presence"""
         self.log("Launching mini-payloads to test WAF reactivity...", "info")
-        detected_waf = []
         
         for name, payload in self.malicious_payloads.items():
             try:
-                # Kirim payload lewat parameter URL
+                # Send payload via URL parameter
                 test_url = f"{self.url}/?search={payload}"
                 r = requests.get(test_url, headers=self.headers, timeout=10, verify=False)
                 
-                # Jika di-block (403, 406, 501) atau server merespon berbeda, berarti ada WAF aktif
+                # If blocked (403, 406, 501) or different response, WAF is likely active
                 if r.status_code in [403, 406, 501, 999]:
                     self.log(f"Blocked by WAF on {name} test (Status: {r.status_code})", "found")
                     return True
@@ -74,19 +73,19 @@ class ReddotWAF:
 
         if waf_name or is_reactive:
             print(f"\n{Fore.RED}[WARNING] WAF DETECTED: {waf_name if waf_name else 'Generic/Unknown WAF'}")
-            print(f"{Fore.YELLOW}[!] STATUS: Hati-hati, jangan brute force terlalu kencang! IP kamu bisa di-ban.")
+            print(f"{Fore.YELLOW}[!] STATUS: High risk. Avoid aggressive brute-forcing to prevent IP banning.")
             
-            # Tips Bypass (Analisis singkat)
+            # Bypass Analysis
             print(f"\n{Fore.CYAN}[BYPASS HINT]:")
             if waf_name == "Cloudflare":
-                print(f"  - Cari IP Origin asli (Gunakan reddot_ip.py)")
-                print(f"  - Coba ganti Host Header atau cari subdomain yang tidak diproteksi.")
+                print(f"  - Look for the Real Origin IP (Use reddot_ip.py)")
+                print(f"  - Try changing the Host Header or probe unprotected subdomains.")
             else:
-                print(f"  - Coba teknik HTTP Parameter Pollution (HPP)")
-                print(f"  - Gunakan rotasi Proxy/VPN untuk menghindari rate-limit.")
+                print(f"  - Experiment with HTTP Parameter Pollution (HPP)")
+                print(f"  - Use Proxy/VPN rotation to evade rate-limiting.")
         else:
             self.log("No WAF detected or WAF is in monitoring mode (Transparent).", "safe")
-            print(f"{Fore.GREEN}[+] STATUS: Jalur aman. Kamu bisa bergerak lebih agresif.")
+            print(f"{Fore.GREEN}[+] STATUS: Path is clear. You can proceed with aggressive scanning.")
 
 if __name__ == "__main__":
     target = input(f"{Fore.WHITE}Enter Target Domain to check WAF: ")
