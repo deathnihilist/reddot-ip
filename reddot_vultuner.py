@@ -3,78 +3,63 @@ import urllib3
 import concurrent.futures
 from colorama import Fore, init
 
-# Disable SSL warnings for max speed & bypass
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 init(autoreset=True)
 
 class ReddotVulnTunner:
     def __init__(self, target):
-        # Bersihkan target dari protokol
         self.target = target.replace("https://", "").replace("http://", "").split('/')[0]
-        self.url = f"http://{self.target}"
+        # Kita coba HTTPS dulu karena lebih standar sekarang
+        self.base_url = f"https://{self.target}"
         
-        # Strategies for Bypassing 403 Forbidden / WAF Blocks
-        self.bypass_headers = [
-            {'X-Forwarded-For': '127.0.0.1'},
-            {'X-Originating-IP': '127.0.0.1'},
-            {'X-Remote-IP': '127.0.0.1'},
-            {'X-Client-IP': '127.0.0.1'},
-            {'User-Agent': 'Googlebot/2.1 (+http://www.google.com/bot.html)'}
-        ]
-
-        # High-Value "Lethal" Targets
+        self.headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
+        
+        # Payload lebih luas & spesifik
         self.payloads = {
-            "Critical Environment": ["/.env", "/.env.old", "/.env.bak"],
-            "Git/VCS Exposure": ["/.git/config", "/.git/index", "/.gitignore"],
-            "Config & Database": ["/config.php.bak", "/db.php.swp", "/database.sql.gz"],
-            "System Info": ["/phpinfo.php", "/info.php", "/version.txt"],
-            "Admin Backdoors": ["/shell.php", "/pma/", "/backup.tar.gz"]
+            "Config": ["/.env", "/.env.bak", "/config.php.bak", "/web.config", "/.git/config"],
+            "Backdoors": ["/shell.php", "/wp-content/plugins/shell.php", "/pma/", "/admin/index.php"],
+            "Logs/Info": ["/phpinfo.php", "/info.php", "/error_log", "/access_log", "/debug.log"],
+            "Backups": ["/backup.zip", "/data.sql", "/site.tar.gz", "/database.bak"]
         }
 
     def log(self, msg, status="info"):
-        colors = {"info": Fore.CYAN, "found": Fore.RED, "warn": Fore.YELLOW}
-        prefix = {"info": "[*]", "found": "[!]", "warn": "[#]"}
-        print(f"{colors.get(status, Fore.WHITE)}{prefix.get(status, '[*]')} {msg}")
+        color = {"info": Fore.CYAN, "found": Fore.RED, "warn": Fore.YELLOW}.get(status, Fore.WHITE)
+        print(f"{color}[*] {msg}")
 
     def probe(self, category, path):
-        """The 'Wraith' Probe: Tries multiple headers to bypass blocks"""
-        full_url = f"{self.url}{path}"
-        
-        for header in self.bypass_headers:
-            try:
-                # Timeout 5 detik agar tidak stuck
-                r = requests.get(full_url, headers=header, timeout=5, verify=False, allow_redirects=False)
+        full_url = f"{self.base_url}{path}"
+        try:
+            # Gunakan session agar lebih cepat & bypass beberapa filter sederhana
+            r = requests.get(full_url, headers=self.headers, timeout=7, verify=False, allow_redirects=False)
+            
+            # Jika 200 OK atau 403 (Forbidden seringkali berarti filenya ADA tapi dilarang)
+            if r.status_code == 200:
+                if "404" not in r.text.lower() and len(r.text) > 20:
+                    print(f"{Fore.RED}[!] VULN FOUND [{category}]: {full_url} (Size: {len(r.text)})")
+                    return True
+            elif r.status_code == 403:
+                # 403 seringkali pertanda bagus (filenya ada tapi di-protect)
+                print(f"{Fore.YELLOW}[#] POTENTIAL [{category}]: {full_url} (Status: 403 Forbidden)")
                 
-                if r.status_code == 200 and len(r.text) > 10:
-                    # Anti-Fake 404 Logic
-                    if "404" not in r.text.lower() and "not found" not in r.text.lower():
-                        self.log(f"FOUND ({category}): {path}", "found")
-                        with open("leaks_found.txt", "a") as f:
-                            f.write(f"[{self.target}] {category}: {full_url}\n")
-                        return True
-            except:
-                continue
+        except:
+            pass
         return False
 
-    def run(self, tech_stack=None):
-        print(f"\n{Fore.WHITE}--- [ REDDOT AUTOMATED VULN ENGINE - WRAITH MODE ] ---")
-        self.log(f"Initiating Recursive Strike on {self.target}...", "info")
-
-        # Prepare task list
+    def run(self):
+        print(f"\n{Fore.RED}--- [ WRAITH VULN ENGINE : AGGRESSIVE MODE ] ---")
+        self.log(f"Targeting: {self.base_url}", "info")
+        
         tasks = []
-        for category, paths in self.payloads.items():
+        for cat, paths in self.payloads.items():
             for path in paths:
-                tasks.append((category, path))
+                tasks.append((cat, path))
 
-        # Start Multi-Threading (100-Legs)
-        with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
-            # Menggunakan list comprehension untuk memicu eksekusi
-            futures = [executor.submit(self.probe, cat, path) for cat, path in tasks]
-            concurrent.futures.wait(futures)
+        # Gunakan 50 threads agar bener-bener "Nuclear"
+        with concurrent.futures.ThreadPoolExecutor(max_workers=50) as executor:
+            executor.map(lambda p: self.probe(*p), tasks)
 
-        self.log("Scan Sequence Completed.", "info")
+        print(f"\n{Fore.CYAN}[*] Scan Finished. Jika kosong, target mungkin menggunakan WAF kuat.")
 
 if __name__ == "__main__":
     t = input("Target: ")
-    rv = ReddotVulnTunner(t)
-    rv.run()
+    ReddotVulnTunner(t).run()
