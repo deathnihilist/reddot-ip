@@ -8,6 +8,7 @@ try:
     from reddot_detector import ReddotDetector
     from reddot_waf import ReddotWAF
     from reddot_scanner import ReddotScanner
+    from reddot_subhunter import ReddotSubHunter
 except ImportError as e:
     print(f"Error: Required modules not found! ({e})")
 
@@ -40,6 +41,7 @@ class ReddotConsole:
     [{Fore.RED}2{Fore.WHITE}] {Fore.YELLOW}Tech Stack Detector{Fore.WHITE} : 100-Legs aggressive Fingerprinting & Leaks.
     [{Fore.RED}3{Fore.WHITE}] {Fore.YELLOW}WAF Fingerprinting{Fore.WHITE}  : Detect Firewalls & analyze bypass methods.
     [{Fore.RED}4{Fore.WHITE}] {Fore.YELLOW}Sniper Port Scanner{Fore.WHITE}  : Detect versions & find critical backdoors.
+    [{Fore.RED}5{Fore.WHITE}] {Fore.YELLOW}Subdomain Hunter{Fore.WHITE}    : Passive & Active Shadow Discovery.
 
     {Fore.CYAN}SYSTEM COMMANDS:
     {Fore.WHITE}- {Fore.YELLOW}show options{Fore.WHITE}       : Display current configuration.
@@ -102,6 +104,9 @@ class ReddotConsole:
                     scanner = ReddotScanner(self.target)
                     scanner.run()
                 # ---------------------
+                elif cmd == "run 5":
+                     hunter = ReddotSubHunter(self.target)
+                     hunter.run()
                 else:
                     print(f"{Fore.RED}[!] Error: Module '{cmd}' not found.")
 
