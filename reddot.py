@@ -9,7 +9,7 @@ try:
     from reddot_waf import ReddotWAF
     from reddot_scanner import ReddotScanner
     from reddot_subhunter import ReddotSubHunter
-    from reddot_vultuner import ReddotVultuner
+    from reddot_vultuner import ReddotVulnTunner
 except ImportError as e:
     print(f"Error: Required modules not found! ({e})")
 
