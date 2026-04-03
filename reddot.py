@@ -1,4 +1,23 @@
-def banner(self):
+import os
+import sys
+from colorama import Fore, Style, init
+
+# Import our custom modules
+try:
+    from reddot_ip import ReddotIP
+    from reddot_detector import ReddotDetector
+    from reddot_waf import ReddotWAF
+except ImportError as e:
+    print(f"Error: Required modules not found! ({e})")
+
+init(autoreset=True)
+
+class ReddotConsole:
+    def __init__(self):
+        self.target = ""
+        self.developer = "Deathnihilist"
+
+    def banner(self):
         os.system('cls' if os.name == 'nt' else 'clear')
         print(f"""{Fore.RED}
     ██████╗ ███████╗██████╗ ██████╗  ██████╗ ████████╗
@@ -11,7 +30,7 @@ def banner(self):
     {Fore.YELLOW}      [ DEVELOPER: {self.developer} | VERSION: 3.0 ]
 
     {Fore.CYAN}QUICK START:
-    {Fore.WHITE}1. {Fore.YELLOW}set target <domain>{Fore.WHITE} (e.g., set target google.com)
+    {Fore.WHITE}1. {Fore.YELLOW}set target <domain>{Fore.WHITE} (e.g., set target site.com)
     2. {Fore.YELLOW}run <number>{Fore.WHITE}       (Select tool from the list below)
 
     {Fore.CYAN}AVAILABLE MODULES:
@@ -22,6 +41,7 @@ def banner(self):
     {Fore.CYAN}SYSTEM COMMANDS:
     {Fore.WHITE}- {Fore.YELLOW}show options{Fore.WHITE}       : Display current configuration.
     - {Fore.YELLOW}clear{Fore.WHITE}              : Clear the terminal screen.
+    - {Fore.YELLOW}help{Fore.WHITE}               : Display this menu.
     - {Fore.YELLOW}exit reddot{Fore.WHITE}        : Terminate the session and exit.
         """)
 
@@ -35,7 +55,7 @@ def banner(self):
                 break
             
             elif cmd == "help":
-                self.banner() # Show the guide again
+                self.banner()
 
             elif cmd.startswith("set target "):
                 self.target = cmd.replace("set target ", "").replace("https://", "").replace("http://", "").split('/')[0]
@@ -75,3 +95,8 @@ def banner(self):
             else:
                 if cmd:
                     print(f"{Fore.RED}[?] Unknown command. Type 'help' to see available options.")
+
+if __name__ == "__main__":
+    console = ReddotConsole()
+    console.banner()
+    console.main_menu()
