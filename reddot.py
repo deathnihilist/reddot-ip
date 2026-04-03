@@ -43,6 +43,7 @@ class ReddotConsole:
     [{Fore.RED}3{Fore.WHITE}] {Fore.YELLOW}WAF Fingerprinting{Fore.WHITE}  : Detect Firewalls & analyze bypass methods.
     [{Fore.RED}4{Fore.WHITE}] {Fore.YELLOW}Sniper Port Scanner{Fore.WHITE}  : Detect versions & find critical backdoors.
     [{Fore.RED}5{Fore.WHITE}] {Fore.YELLOW}Subdomain Hunter{Fore.WHITE}    : Passive & Active Shadow Discovery.
+    [{Fore.RED}6{Fore.WHITE}] {Fore.YELLOW}Wraith Vuln Engine{Fore.WHITE}   : Shadow Probing & CVE Matcher (Bypass Mode).
 
     {Fore.CYAN}SYSTEM COMMANDS:
     {Fore.WHITE}- {Fore.YELLOW}show options{Fore.WHITE}       : Display current configuration.
