@@ -32,6 +32,7 @@ class ReddotConsole:
     {Fore.CYAN}QUICK START:
     {Fore.WHITE}1. {Fore.YELLOW}set target <domain>{Fore.WHITE} (e.g., set target site.com)
     2. {Fore.YELLOW}run <number>{Fore.WHITE}       (Select tool from the list below)
+    3. {Fore.YELLOW}back / unset{Fore.WHITE}      (Clear current target and return)
 
     {Fore.CYAN}AVAILABLE MODULES:
     {Fore.WHITE}[{Fore.RED}1{Fore.WHITE}] {Fore.YELLOW}IP Origin Finder{Fore.WHITE}    : Find real server IP & neighbors (Grid Mode).
@@ -40,6 +41,7 @@ class ReddotConsole:
 
     {Fore.CYAN}SYSTEM COMMANDS:
     {Fore.WHITE}- {Fore.YELLOW}show options{Fore.WHITE}       : Display current configuration.
+    - {Fore.YELLOW}back{Fore.WHITE}               : Unset current target.
     - {Fore.YELLOW}clear{Fore.WHITE}              : Clear the terminal screen.
     - {Fore.YELLOW}help{Fore.WHITE}               : Display this menu.
     - {Fore.YELLOW}exit reddot{Fore.WHITE}        : Terminate the session and exit.
@@ -47,6 +49,7 @@ class ReddotConsole:
 
     def main_menu(self):
         while True:
+            # Dynamic prompt based on target status
             target_display = f"({Fore.RED}{self.target}{Fore.WHITE})" if self.target else ""
             cmd = input(f"{Fore.WHITE}reddot {target_display} > ").strip().lower()
 
@@ -61,36 +64,39 @@ class ReddotConsole:
                 self.target = cmd.replace("set target ", "").replace("https://", "").replace("http://", "").split('/')[0]
                 print(f"{Fore.GREEN}[+] Target locked: {self.target}")
 
+            elif cmd == "back" or cmd == "unset target" or cmd == "unset":
+                if not self.target:
+                    print(f"{Fore.CYAN}[*] No target is currently set.")
+                else:
+                    self.target = ""
+                    print(f"{Fore.YELLOW}[*] Target released. Returning to main menu.")
+
             elif cmd == "show options":
                 print(f"\n[{Fore.CYAN}CONFIGURATION{Fore.WHITE}]")
                 print(f"TARGET : {Fore.YELLOW}{self.target if self.target else 'NOT SET'}")
-                print(f"STATUS : {Fore.GREEN}Ready to engage\n")
+                print(f"STATUS : {Fore.GREEN if self.target else Fore.RED}{'Ready to engage' if self.target else 'Waiting for input'}\n")
 
             elif cmd == "clear":
                 self.banner()
 
-            elif cmd == "run 1":
+            elif cmd.startswith("run "):
                 if not self.target: 
                     print(f"{Fore.RED}[!] Error: Target is not defined. Use 'set target <domain>' first.")
                     continue
-                scanner = ReddotIP()
-                scanner.scan(self.target)
-
-            elif cmd == "run 2":
-                if not self.target: 
-                    print(f"{Fore.RED}[!] Error: Target is not defined.")
-                    continue
-                det = ReddotDetector(self.target)
-                det.detect_headers()
-                det.run_centipede()
-                det.display_report()
-
-            elif cmd == "run 3":
-                if not self.target: 
-                    print(f"{Fore.RED}[!] Error: Target is not defined.")
-                    continue
-                wf = ReddotWAF(self.target)
-                wf.check()
+                
+                if cmd == "run 1":
+                    scanner = ReddotIP()
+                    scanner.scan(self.target)
+                elif cmd == "run 2":
+                    det = ReddotDetector(self.target)
+                    det.detect_headers()
+                    det.run_centipede()
+                    det.display_report()
+                elif cmd == "run 3":
+                    wf = ReddotWAF(self.target)
+                    wf.check()
+                else:
+                    print(f"{Fore.RED}[!] Error: Module '{cmd}' not found.")
 
             else:
                 if cmd:
