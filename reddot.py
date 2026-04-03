@@ -39,10 +39,10 @@ class ReddotConsole:
 
     {Fore.CYAN}AVAILABLE MODULES:
     {Fore.WHITE}[{Fore.RED}1{Fore.WHITE}] {Fore.YELLOW}IP Origin Finder{Fore.WHITE}    : Find real server IP & neighbors (Grid Mode).
-    [{Fore.RED}2{Fore.WHITE}] {Fore.YELLOW}Tech Stack Detector{Fore.WHITE} : 100-Legs aggressive Fingerprinting & Leaks.
+    [{Fore.RED}2{Fore.WHITE}] {Fore.YELLOW}Digital DNA Detector{Fore.WHITE} : 100-Legs aggressive Fingerprinting & Leaks.
     [{Fore.RED}3{Fore.WHITE}] {Fore.YELLOW}WAF Fingerprinting{Fore.WHITE}  : Detect Firewalls & analyze bypass methods.
     [{Fore.RED}4{Fore.WHITE}] {Fore.YELLOW}Sniper Port Scanner{Fore.WHITE}  : Detect versions & find critical backdoors.
-    [{Fore.RED}5{Fore.WHITE}] {Fore.YELLOW}Subdomain Hunter{Fore.WHITE}    : Passive & Active Shadow Discovery.
+    [{Fore.RED}5{Fore.WHITE}] {Fore.YELLOW}Shadow Sub-Hunter{Fore.WHITE}    : Passive & Active Shadow Discovery.
     [{Fore.RED}6{Fore.WHITE}] {Fore.YELLOW}Wraith Vuln Engine{Fore.WHITE}   : Shadow Probing & CVE Matcher (Bypass Mode).
 
     {Fore.CYAN}SYSTEM COMMANDS:
@@ -55,7 +55,6 @@ class ReddotConsole:
 
     def main_menu(self):
         while True:
-            # Dynamic prompt based on target status
             target_display = f"({Fore.RED}{self.target}{Fore.WHITE})" if self.target else ""
             cmd = input(f"{Fore.WHITE}reddot {target_display} > ").strip().lower()
 
@@ -70,12 +69,9 @@ class ReddotConsole:
                 self.target = cmd.replace("set target ", "").replace("https://", "").replace("http://", "").split('/')[0]
                 print(f"{Fore.GREEN}[+] Target locked: {self.target}")
 
-            elif cmd == "back" or cmd == "unset target" or cmd == "unset":
-                if not self.target:
-                    print(f"{Fore.CYAN}[*] No target is currently set.")
-                else:
-                    self.target = ""
-                    print(f"{Fore.YELLOW}[*] Target released. Returning to main menu.")
+            elif cmd in ["back", "unset target", "unset"]:
+                self.target = ""
+                print(f"{Fore.YELLOW}[*] Target released. Returning to main menu.")
 
             elif cmd == "show options":
                 print(f"\n[{Fore.CYAN}CONFIGURATION{Fore.WHITE}]")
@@ -101,27 +97,20 @@ class ReddotConsole:
                 elif cmd == "run 3":
                     wf = ReddotWAF(self.target)
                     wf.check()
-                # --- TAMBAHKAN INI ---
                 elif cmd == "run 4":
                     scanner = ReddotScanner(self.target)
                     scanner.run()
-                # ---------------------
                 elif cmd == "run 5":
                      hunter = ReddotSubHunter(self.target)
                      hunter.run()
                 elif cmd == "run 6":
-                    if not self.target: 
-                        print(f"{Fore.RED}[!] Error: No target.")
-                        continue
-                    # Panggil Vulnerability Engine
                     vuln = ReddotVulnTunner(self.target)
                     vuln.run()
                 else:
                     print(f"{Fore.RED}[!] Error: Module '{cmd}' not found.")
-
-            else:
-                if cmd:
-                    print(f"{Fore.RED}[?] Unknown command. Type 'help' to see available options.")
+            
+            elif cmd:
+                print(f"{Fore.RED}[?] Unknown command. Type 'help' to see available options.")
 
 if __name__ == "__main__":
     console = ReddotConsole()
