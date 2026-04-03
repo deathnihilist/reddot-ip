@@ -9,6 +9,7 @@ try:
     from reddot_waf import ReddotWAF
     from reddot_scanner import ReddotScanner
     from reddot_subhunter import ReddotSubHunter
+    from reddot_vultuner import ReddotVultuner
 except ImportError as e:
     print(f"Error: Required modules not found! ({e})")
 
@@ -107,6 +108,13 @@ class ReddotConsole:
                 elif cmd == "run 5":
                      hunter = ReddotSubHunter(self.target)
                      hunter.run()
+                elif cmd == "run 6":
+                    if not self.target: 
+                        print(f"{Fore.RED}[!] Error: No target.")
+                        continue
+                    # Panggil Vulnerability Engine
+                    vuln = ReddotVulnTunner(self.target)
+                    vuln.run()
                 else:
                     print(f"{Fore.RED}[!] Error: Module '{cmd}' not found.")
 
