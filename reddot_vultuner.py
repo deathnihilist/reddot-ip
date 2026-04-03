@@ -18,10 +18,10 @@ class ReddotVulnTunner:
         
         # High-Value Path Dictionary
         self.payloads = {
-            "Environment": ["/.env", "/.env.local", "/.env.php", "/.env.bak"],
-            "VCS": ["/.git/config", "/.git/index", "/.gitignore", "/.svn/entries"],
-            "Config": ["/web.config", "/phpinfo.php", "/config.php.bak", "/.htaccess"],
-            "Backup": ["/backup.zip", "/database.sql", "/site.tar.gz", "/archive.rar"]
+            "Critical": ["/.env", "/.git/config", "/.env.save", "/.php_cs"],
+            "CMS_Specific": ["/wp-config.php.bak", "/wp-content/debug.log", "/ads.txt"],
+            "Installers": ["/setup.php", "/install.php", "/phpmyadmin/setup/index.php"],
+            "Archives": ["/backup.sql", "/site.zip", "/old.tar.gz", "/db.dump"]
         }
 
     def log(self, msg, status="info"):
