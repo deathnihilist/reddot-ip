@@ -1,24 +1,23 @@
 import os
 import sys
+import importlib
 from colorama import Fore, Style, init
-
-# Import our custom modules
-try:
-    from reddot_ip import ReddotIP
-    from reddot_detector import ReddotDetector
-    from reddot_waf import ReddotWAF
-    from reddot_scanner import ReddotScanner
-    from reddot_subhunter import ReddotSubHunter
-    from reddot_vultuner import ReddotVulnTunner
-except ImportError as e:
-    print(f"{Fore.RED}[!] Error: Required modules not found! ({e})")
 
 init(autoreset=True)
 
-class ReddotConsole:
+class ReddotFramework:
     def __init__(self):
         self.target = ""
         self.developer = "Deathnihilist"
+        # KONFIGURASI MODUL: Tambah di sini jika ada file .py baru
+        self.MODULE_MAP = {
+            "1": {"name": "IP Origin Finder", "desc": "Find real server IP & neighbors.", "file": "reddot_ip", "class": "ReddotIP"},
+            "2": {"name": "Digital DNA Detector", "desc": "100-Legs Fingerprinting & Leaks.", "file": "reddot_detector", "class": "ReddotDetector"},
+            "3": {"name": "WAF Fingerprinting", "desc": "Detect Firewalls & analyze bypass.", "file": "reddot_waf", "class": "ReddotWAF"},
+            "4": {"name": "Sniper Port Scanner", "desc": "Detect versions & critical backdoors.", "file": "reddot_scanner", "class": "ReddotScanner"},
+            "5": {"name": "Shadow Sub-Hunter", "desc": "Passive & Active Shadow Discovery.", "file": "reddot_subhunter", "class": "ReddotSubHunter"},
+            "6": {"name": "Wraith Vuln Engine", "desc": "Shadow Probing & CVE Matcher.", "file": "reddot_vultuner", "class": "ReddotVulnTunner"},
+        }
 
     def banner(self):
         os.system('cls' if os.name == 'nt' else 'clear')
@@ -32,61 +31,61 @@ class ReddotConsole:
     {Fore.WHITE}      [ MULTI-FUNCTION RECON FRAMEWORK ]
     {Fore.YELLOW}      [ DEVELOPER: {self.developer} | VERSION: 3.0 ]
 
-    {Fore.CYAN}AVAILABLE MODULES:
-    {Fore.WHITE}[{Fore.RED}1{Fore.WHITE}] {Fore.YELLOW}IP Origin Finder{Fore.WHITE}    : Find real server IP & neighbors.
-    [{Fore.RED}2{Fore.WHITE}] {Fore.YELLOW}Digital DNA Detector{Fore.WHITE} : 100-Legs Fingerprinting & Leaks.
-    [{Fore.RED}3{Fore.WHITE}] {Fore.YELLOW}WAF Fingerprinting{Fore.WHITE}  : Detect Firewalls & analyze bypass.
-    [{Fore.RED}4{Fore.WHITE}] {Fore.YELLOW}Sniper Port Scanner{Fore.WHITE}  : Detect versions & critical backdoors.
-    [{Fore.RED}5{Fore.WHITE}] {Fore.YELLOW}Shadow Sub-Hunter{Fore.WHITE}    : Passive & Active Shadow Discovery.
-    [{Fore.RED}6{Fore.WHITE}] {Fore.YELLOW}Wraith Vuln Engine{Fore.WHITE}   : Shadow Probing & CVE Matcher.
-        """)
+    {Fore.CYAN}QUICK START:
+    {Fore.WHITE}1. {Fore.YELLOW}set target <domain>{Fore.WHITE} | 2. {Fore.YELLOW}run <number>{Fore.WHITE} | 3. {Fore.YELLOW}back/clear{Fore.WHITE}
+
+    {Fore.CYAN}AVAILABLE MODULES:""")
+        
+        for key, info in self.MODULE_MAP.items():
+            print(f"    {Fore.WHITE}[{Fore.RED}{key}{Fore.WHITE}] {Fore.YELLOW}{info['name']:<20}{Fore.WHITE} : {info['desc']}")
+
+        print(f"""
+    {Fore.CYAN}SYSTEM COMMANDS:
+    {Fore.WHITE}- {Fore.YELLOW}show options{Fore.WHITE} | {Fore.YELLOW}help{Fore.WHITE} | {Fore.YELLOW}clear{Fore.WHITE} | {Fore.YELLOW}exit reddot{Fore.WHITE}""")
+
+    def execute_module(self, choice):
+        if choice not in self.MODULE_MAP:
+            print(f"{Fore.RED}[!] Module {choice} not found.")
+            return
+
+        mod_info = self.MODULE_MAP[choice]
+        try:
+            # Dynamic Import: Memanggil file hanya saat dibutuhkan (Licin!)
+            module = importlib.import_lib(mod_info['file'])
+            instance_class = getattr(module, mod_info['class'])
+            
+            # Menjalankan modul
+            print(f"{Fore.CYAN}[*] Launching {mod_info['name']}...")
+            instance = instance_class(self.target)
+            
+            # Menyesuaikan cara panggil tiap modul (IP Scanner butuh .scan, yang lain .run)
+            if hasattr(instance, 'run'): instance.run()
+            elif hasattr(instance, 'scan'): instance.scan(self.target)
+            elif hasattr(instance, 'check'): instance.check()
+                
+        except Exception as e:
+            print(f"{Fore.RED}[!] Execution Error in {mod_info['name']}: {e}")
 
     def main_menu(self):
+        self.banner()
         while True:
             target_display = f"({Fore.RED}{self.target}{Fore.WHITE})" if self.target else ""
             cmd = input(f"{Fore.WHITE}reddot {target_display} > ").strip().lower()
 
-            if cmd == "exit reddot":
-                print(f"{Fore.YELLOW}[!] Shutting down Reddot Framework...")
-                break
-            
-            elif cmd in ["help", "clear"]:
-                self.banner()
-
+            if cmd == "exit reddot": break
+            elif cmd in ["help", "clear"]: self.banner()
             elif cmd.startswith("set target "):
                 self.target = cmd.replace("set target ", "").replace("https://", "").replace("http://", "").split('/')[0]
                 print(f"{Fore.GREEN}[+] Target locked: {self.target}")
-
             elif cmd in ["back", "unset"]:
                 self.target = ""
                 print(f"{Fore.YELLOW}[*] Target released.")
-
-            elif cmd == "run 1":
-                if not self.target: print(f"{Fore.RED}[!] Set target first."); continue
-                ReddotIP().scan(self.target)
-
-            elif cmd == "run 2":
-                if not self.target: print(f"{Fore.RED}[!] Set target first."); continue
-                det = ReddotDetector(self.target)
-                det.detect_headers(); det.run_centipede(); det.display_report()
-
-            elif cmd == "run 3":
-                if not self.target: print(f"{Fore.RED}[!] Set target first."); continue
-                ReddotWAF(self.target).check()
-
-            elif cmd == "run 4":
-                if not self.target: print(f"{Fore.RED}[!] Set target first."); continue
-                ReddotScanner(self.target).run()
-
-            elif cmd == "run 5":
-                if not self.target: print(f"{Fore.RED}[!] Set target first."); continue
-                ReddotSubHunter(self.target).run()
-
-            elif cmd == "run 6":
-                if not self.target: print(f"{Fore.RED}[!] Set target first."); continue
-                ReddotVulnTunner(self.target).run()
+            elif cmd.startswith("run "):
+                if not self.target:
+                    print(f"{Fore.RED}[!] Error: Target is not defined."); continue
+                self.execute_module(cmd.replace("run ", ""))
+            elif cmd == "show options":
+                print(f"\n{Fore.CYAN}[TARGET] : {Fore.YELLOW}{self.target if self.target else 'NONE'}\n")
 
 if __name__ == "__main__":
-    console = ReddotConsole()
-    console.banner()
-    console.main_menu()
+    ReddotFramework().main_menu()
