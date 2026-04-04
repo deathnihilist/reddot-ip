@@ -20,14 +20,13 @@ The tool automates the process of footprinting SSL certificate metadata and hist
 7. Modular Architecture: Built with a flexible core to allow for rapid integration of new vulnerability scanning modules.
 
 ## Installation and Setup
-
 REDDOT IP is optimized for Kali Linux. Follow the sequence below to initialize the environment:
-1. Install Git LFS (Required for Payloads)
+## 1. Install Git LFS (Required for Payloads)
 Since the framework includes large wordlists, Git LFS must be initialized on your system before cloning:
 sudo apt update && sudo apt install git-lfs -y
 git lfs install
 
-2. Clone and Initialize
+## 2. Clone and Initialize
 a. git clone https://github.com/deathnihilist/reddot-ip.git
 b. cd reddot-ip
 c. chmod +x setup.sh
