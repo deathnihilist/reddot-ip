@@ -2,6 +2,7 @@ import requests
 import urllib3
 import concurrent.futures
 from colorama import Fore, init
+import os  # Ditambahkan untuk membaca file eksternal
 
 # Suppress SSL Warnings
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -14,11 +15,14 @@ class ReddotVulnTunner:
         self.headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) Reddot/3.0'}
         
         self.stats = {"200": 0, "403": 0, "404": 0, "Errors": 0}
+        
+        # [KODE ASLIMU DIPERTAHANKAN] Sebagai cadangan jika master_fuzz.txt hilang
         self.payloads = {
             "Config": ["/.env", "/.git/config", "/web.config", "/.htaccess"],
             "Admin": ["/phpinfo.php", "/pma/", "/admin/config.php", "/shell.php"],
             "Backup": ["/backup.zip", "/database.sql", "/site.tar.gz", "/old.bak"]
         }
+        self.master_file = "master_fuzz.txt"
 
     def log_status(self, code, path):
         """Color-coded logging for every single request."""
@@ -57,16 +61,34 @@ class ReddotVulnTunner:
         print(f"\n{Fore.RED}--- [ WRAITH VULN ENGINE : FULL VERBOSE MODE ] ---")
         print(f"{Fore.CYAN}[*] Targeting: {self.base_url}\n")
         
-        tasks = []
-        for cat, paths in self.payloads.items():
-            for path in paths:
-                tasks.append((cat, path))
+        # [INTEGRASI STRATEGI BARU]
+        # Jika file 6,4 Juta barismu ada, jalankan mode kencang
+        if os.path.exists(self.master_file):
+            print(f"{Fore.YELLOW}[*] Master file detected! Loading 6.4 Million payloads...")
+            
+            # Wrapper agar tidak merusak fungsi 'probe' bawaanmu yang butuh argumen 'category'
+            def probe_wrapper(path):
+                p = path if path.startswith('/') else '/' + path
+                return self.probe("Master", p)
+            
+            # Saya naikkan ke 100 workers agar lari kencang
+            with concurrent.futures.ThreadPoolExecutor(max_workers=100) as executor:
+                with open(self.master_file, 'r', encoding='utf-8', errors='ignore') as f:
+                    paths = (line.strip() for line in f if line.strip())
+                    list(executor.map(probe_wrapper, paths))
+                    
+        else:
+            # Jika file master_fuzz.txt tidak ada, pakai kodemu yang lama secara otomatis
+            print(f"{Fore.CYAN}[*] Master file not found. Using your original hardcoded payloads...")
+            tasks = []
+            for cat, paths in self.payloads.items():
+                for path in paths:
+                    tasks.append((cat, path))
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
-            # list() forces the generator to execute immediately
-            list(executor.map(lambda p: self.probe(*p), tasks))
+            with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
+                list(executor.map(lambda p: self.probe(*p), tasks))
 
-        # Final Report Summary
+        # Final Report Summary (Semua datamu tetap terekam sempurna)
         print(f"\n{Fore.CYAN}--- [ SCAN SUMMARY ] ---")
         print(f"{Fore.GREEN}Success (200)   : {self.stats['200']}")
         print(f"{Fore.YELLOW}Forbidden (403) : {self.stats['403']}")
