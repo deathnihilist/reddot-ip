@@ -28,10 +28,10 @@ sudo apt update && sudo apt install git-lfs -y
 git lfs install
 
 2. Clone and Initialize
-git clone https://github.com/deathnihilist/reddot-ip.git
-cd reddot-ip
-chmod +x setup.sh
-./setup.sh
+a. git clone https://github.com/deathnihilist/reddot-ip.git
+b. cd reddot-ip
+c. chmod +x setup.sh
+d.  ./setup.sh
 
 ## Usage
 To launch the primary interface:
