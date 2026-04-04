@@ -19,6 +19,10 @@ The tool automates the process of footprinting SSL certificate metadata and hist
 6. Automated Session Logging: All reconnaissance data is structured and exported to the logs/ directory for post-operational reporting.
 7. Modular Architecture: Built with a flexible core to allow for rapid integration of new vulnerability scanning modules.
 
+
+
+
+
 ## Installation and Setup
 REDDOT IP is optimized for Kali Linux. Follow the sequence below to initialize the environment:
 ## 1. Install Git LFS (Required for Payloads)
@@ -31,6 +35,10 @@ a. git clone https://github.com/deathnihilist/reddot-ip.git
 b. cd reddot-ip
 c. chmod +x setup.sh
 d.  ./setup.sh
+
+
+
+
 
 ## Usage
 To launch the primary interface:
