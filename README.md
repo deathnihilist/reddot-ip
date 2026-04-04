@@ -33,7 +33,7 @@ cd reddot-ip
 chmod +x setup.sh
 ./setup.sh
 
-Usage
+## Usage
 To launch the primary interface:
 python3 reddot.py
 
@@ -45,7 +45,7 @@ REDDOT IP is under active development. The framework is designed to be a living 
 3. Enhanced bypass techniques for evolving WAF security postures.
 4. Customizable threading logic for high-performance scanning.
 
-New modules and logic updates will be pushed regularly to the main branch. Users are encouraged to run git pull frequently to ensure they are using the latest tactical capabilities.
+## New modules and logic updates will be pushed regularly to the main branch. Users are encouraged to run git pull frequently to ensure they are using the latest tactical capabilities.
 
 ## Disclaimer
 This tool is intended for authorized security auditing and educational purposes only. Unauthorized access to computer systems is illegal. The developer assumes no liability for any misuse or damage caused by this program.
