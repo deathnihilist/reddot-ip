@@ -14,10 +14,20 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 init(autoreset=True)
 
 class ReddotFingerprint:
-    def __init__(self, target_domain, ip_list_file):
+    def __init__(self, target_domain, ip_source):
         self.target_domain = target_domain.replace("https://", "").replace("http://", "").split('/')[0]
         self.target_url = f"https://{self.target_domain}"
-        self.ip_list_file = ip_list_file
+        
+        # --- [ PERBAIKAN INTEGRASI DI SINI ] ---
+        # Cek apakah ip_source itu List dari memori atau Nama File .txt
+        if isinstance(ip_source, list):
+            self.ip_list = ip_source
+            self.ip_list_file = None
+        else:
+            self.ip_list_file = ip_source
+            self.ip_list = []
+        # ----------------------------------------
+            
         self.headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Reddot/7.0 Fingerprinter'}
         self.log_lock = threading.Lock()
         
@@ -110,7 +120,6 @@ class ReddotFingerprint:
             ip_server = r.headers.get("Server", "N/A")
             
             if ip_server != "UNKNOWN" and ip_server != "N/A" and ip_server == self.target_profile["server_header"]:
-                # Exclude generic Cloudflare/Akamai headers from adding confidence
                 if "cloudflare" not in ip_server.lower() and "akamai" not in ip_server.lower():
                     confidence += 20
                     match_reasons.append(f"SERVER_STACK_MATCH [{ip_server}]")
@@ -138,7 +147,6 @@ class ReddotFingerprint:
                 print(f"    ANALYSIS   : Strong visual/structural correlation found. Could be staging/dev server.")
                 print(f"{Fore.YELLOW}----------------------------------------------------------------------{Fore.WHITE}")
             
-            # Print a subtle progress indicator for IPs that don't match
             else:
                 print(f"{Fore.BLACK}{Fore.LIGHTBLACK_EX}[-] IP {ip} rejected (Confidence: {confidence}%){Fore.WHITE}", end='\r')
 
@@ -154,18 +162,24 @@ class ReddotFingerprint:
         if not self.profile_target():
             return
             
-        if not os.path.exists(self.ip_list_file):
-            print(f"{Fore.RED}[!] Candidate IP file '{self.ip_list_file}' not found!{Fore.WHITE}")
-            return
-            
-        print(f"\n{Fore.CYAN}[*] PHASE 2: LAUNCHING GLOBAL CROSS-MATCHING...{Fore.WHITE}")
-        
-        try:
+        # --- [ PERBAIKAN INTEGRASI DI SINI ] ---
+        # Menentukan sumber IP
+        if self.ip_list_file:
+            # Jika sumbernya file, gunakan pengecekan file seperti aslinya
+            if not os.path.exists(self.ip_list_file):
+                print(f"{Fore.RED}[!] Candidate IP file '{self.ip_list_file}' not found!{Fore.WHITE}")
+                return
             with open(self.ip_list_file, 'r') as f:
                 ips = [line.strip() for line in f if line.strip()]
+        else:
+            # Jika sumbernya list langsung dari memori
+            ips = self.ip_list
+        # ----------------------------------------
             
-            print(f"{Fore.YELLOW}[*] Loaded {len(ips)} candidate IPs. Initiating silent reconnaissance...{Fore.WHITE}\n")
-            
+        print(f"\n{Fore.CYAN}[*] PHASE 2: LAUNCHING GLOBAL CROSS-MATCHING...{Fore.WHITE}")
+        print(f"{Fore.YELLOW}[*] Loaded {len(ips)} candidate IPs. Initiating silent reconnaissance...{Fore.WHITE}\n")
+        
+        try:
             with concurrent.futures.ThreadPoolExecutor(max_workers=50) as executor:
                 executor.map(self.scan_candidate, ips)
                 

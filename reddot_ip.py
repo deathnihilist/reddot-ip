@@ -89,12 +89,7 @@ class ReddotIP:
         except Exception as e:
             print_status(f"Neighbor Scan Error: {e}", "error")
 
-    # [FIX] Renamed 'scan' to 'run' and removed the 'target' parameter,
-    # since we now use self.target defined in __init__
     def run(self):
-        # Optional: Print the banner if you still want it in modular mode
-        # self.banner() 
-        
         is_cf = self.check_cloudflare(self.target)
         if is_cf:
             print(f"{Fore.RED}[!] Cloudflare Detected! Target is hiding. Initiating Deep DNS Scan...")
@@ -107,6 +102,12 @@ class ReddotIP:
             self.reverse_ip_hunter(target_ip)
         elif is_cf:
             print(f"{Fore.YELLOW}[!] Bypassing techniques needed to find real IP before neighbor scan.")
+
+        # --- [ PERBAIKAN DI SINI ] ---
+        # Kirim IP yang ditemukan kembali ke Framework Utama (reddot.py)
+        if target_ip:
+            return [target_ip]
+        return []
 
 # Standalone execution block (for direct testing outside the framework)
 if __name__ == "__main__":

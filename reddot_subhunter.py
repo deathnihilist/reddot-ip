@@ -9,7 +9,8 @@ init(autoreset=True)
 
 class ReddotSubHunter:
     def __init__(self, domain):
-        self.domain = domain
+        # Clean the target input just like in Module 1
+        self.domain = domain.replace("https://", "").replace("http://", "").split('/')[0]
         self.found_subdomains = set()
         # Common subdomains wordlist (The "Fangs")
         self.wordlist = [
@@ -67,6 +68,9 @@ class ReddotSubHunter:
                 if res:
                     self.found_subdomains.add(res[0])
 
+        # --- [ PERBAIKAN DI SINI ] ---
+        discovered_ips = set() # Menggunakan set agar IP yang didapat tidak duplikat
+
         # Final Report
         if not self.found_subdomains:
             self.log("No subdomains found. Target perimeter is extremely isolated.", "crit")
@@ -79,10 +83,16 @@ class ReddotSubHunter:
                 try:
                     ip = socket.gethostbyname(sub)
                     print(f"{Fore.GREEN}[+] {sub.ljust(30)} {Fore.YELLOW}-> IP: {ip}")
+                    discovered_ips.add(ip) # Catat IP yang aktif
                 except:
                     print(f"{Fore.WHITE}[?] {sub.ljust(30)} {Fore.YELLOW}-> IP: Resolution Failed")
             print(f"{Fore.WHITE}{'-'*50}")
             self.log(f"Total Unique Subdomains Found: {len(self.found_subdomains)}", "found")
+            
+            # Kembalikan daftar IP unik ke Framework (reddot.py)
+            return list(discovered_ips)
+            
+        return []
 
 if __name__ == "__main__":
     target = input(f"{Fore.WHITE}Enter Target Domain: ")

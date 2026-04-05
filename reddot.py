@@ -9,7 +9,9 @@ class ReddotFramework:
     def __init__(self):
         self.target = ""
         self.developer = "Deathnihilist"
-        # KONFIGURASI MODUL: Module 7 telah ditambahkan
+        self.collected_ips = set() # <--- PENAMPUNG IP OTOMATIS (Mencegah duplikat)
+        
+        # KONFIGURASI MODUL
         self.MODULE_MAP = {
             "1": {"name": "IP Origin Finder", "desc": "Find real server IP & neighbors.", "file": "reddot_ip", "class": "ReddotIP"},
             "2": {"name": "Digital DNA Detector", "desc": "100-Legs Fingerprinting & Leaks.", "file": "reddot_detector", "class": "ReddotDetector"},
@@ -57,19 +59,34 @@ class ReddotFramework:
             
             print(f"{Fore.CYAN}[*] Launching {mod_info['name']}...")
 
-            # Penyesuaian khusus untuk Module 7 (Butuh input file IP)
+            # KHUSUS MODUL 7: Cek memori otomatis
             if choice == "7":
-                ip_file = input(f"{Fore.YELLOW}[?] Path to Candidate IP List (e.g., ips.txt): {Fore.WHITE}").strip()
-                if not os.path.exists(ip_file):
-                    print(f"{Fore.RED}[!] Error: File '{ip_file}' not found."); return
-                instance = instance_class(self.target, ip_file)
+                if self.collected_ips:
+                    print(f"{Fore.GREEN}[+] Auto-loading {len(self.collected_ips)} IPs discovered in this session.{Fore.WHITE}")
+                    # Kirim list IP langsung ke Modul 7
+                    instance = instance_class(self.target, list(self.collected_ips))
+                else:
+                    # Fallback jika memori kosong
+                    print(f"{Fore.YELLOW}[!] No IPs collected from Module 1 or 5 yet.{Fore.WHITE}")
+                    ip_file = input(f"{Fore.YELLOW}[?] Path to Candidate IP List (e.g., ips.txt): {Fore.WHITE}").strip()
+                    if not os.path.exists(ip_file):
+                        print(f"{Fore.RED}[!] Error: File '{ip_file}' not found."); return
+                    instance = instance_class(self.target, ip_file)
             else:
                 instance = instance_class(self.target)
             
-            # Menjalankan modul berdasarkan method yang tersedia
-            if hasattr(instance, 'run'): instance.run()
-            elif hasattr(instance, 'scan'): instance.scan(self.target)
-            elif hasattr(instance, 'check'): instance.check()
+            # Jalankan modul & tangkap hasilnya (jika modul mengembalikan list IP)
+            result = None
+            if hasattr(instance, 'run'): result = instance.run()
+            elif hasattr(instance, 'scan'): result = instance.scan(self.target)
+            elif hasattr(instance, 'check'): result = instance.check()
+            
+            # Jika modul me-return list IP, simpan ke memori
+            if isinstance(result, list):
+                for ip in result:
+                    if ip:
+                        self.collected_ips.add(ip)
+                        print(f"{Fore.MAGENTA}[SYSTEM] IP {ip} cached for Module 7.{Fore.WHITE}")
                 
         except Exception as e:
             print(f"{Fore.RED}[!] Execution Error in {mod_info['name']}: {e}")
@@ -83,11 +100,16 @@ class ReddotFramework:
             if cmd == "exit reddot": break
             elif cmd in ["help", "clear"]: self.banner()
             elif cmd.startswith("set target "):
-                self.target = cmd.replace("set target ", "").replace("https://", "").replace("http://", "").split('/')[0]
-                print(f"{Fore.GREEN}[+] Target locked: {self.target}")
+                new_target = cmd.replace("set target ", "").replace("https://", "").replace("http://", "").split('/')[0]
+                # Jika ganti target, bersihkan cache IP yang lama
+                if new_target != self.target:
+                    self.target = new_target
+                    self.collected_ips.clear() 
+                    print(f"{Fore.GREEN}[+] Target locked: {self.target} (IP cache cleared){Fore.WHITE}")
             elif cmd in ["back", "unset"]:
                 self.target = ""
-                print(f"{Fore.YELLOW}[*] Target released.")
+                self.collected_ips.clear() # Bersihkan cache saat lepas target
+                print(f"{Fore.YELLOW}[*] Target released (IP cache cleared).{Fore.WHITE}")
             elif cmd.startswith("run "):
                 if not self.target:
                     print(f"{Fore.RED}[!] Error: Target is not defined."); continue
