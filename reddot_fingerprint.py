@@ -157,7 +157,7 @@ class ReddotFingerprint:
         print(f"{Fore.RED}██╔══██╗██╔══╝  ██║  ██║██║  ██║██║   ██║   ██║   {Fore.WHITE}")
         print(f"{Fore.RED}██║  ██║███████╗██████╔╝██████╔╝╚██████╔╝   ██║   {Fore.WHITE}")
         print(f"{Fore.RED}╚═╝  ╚═╝╚══════╝╚═════╝ ╚═════╝  ╚═════╝    ╚═╝   {Fore.WHITE}")
-        print(f"{Fore.DARK_GREY}      [ MODULE 7 : IDENTITY FINGERPRINT MATCHING ]{Fore.WHITE}")
+        print(f"{Fore.LIGHTBLACK_EX}      [ MODULE 7 : IDENTITY FINGERPRINT MATCHING ]{Fore.WHITE}")
         
         if not self.profile_target():
             return
