@@ -9,7 +9,7 @@ class ReddotFramework:
     def __init__(self):
         self.target = ""
         self.developer = "Deathnihilist"
-        # KONFIGURASI MODUL: Tambah di sini jika ada file .py baru
+        # KONFIGURASI MODUL: Module 7 telah ditambahkan
         self.MODULE_MAP = {
             "1": {"name": "IP Origin Finder", "desc": "Find real server IP & neighbors.", "file": "reddot_ip", "class": "ReddotIP"},
             "2": {"name": "Digital DNA Detector", "desc": "100-Legs Fingerprinting & Leaks.", "file": "reddot_detector", "class": "ReddotDetector"},
@@ -17,6 +17,7 @@ class ReddotFramework:
             "4": {"name": "Sniper Port Scanner", "desc": "Detect versions & critical backdoors.", "file": "reddot_scanner", "class": "ReddotScanner"},
             "5": {"name": "Shadow Sub-Hunter", "desc": "Passive & Active Shadow Discovery.", "file": "reddot_subhunter", "class": "ReddotSubHunter"},
             "6": {"name": "Wraith Vuln Engine", "desc": "Shadow Probing & CVE Matcher.", "file": "reddot_vultuner", "class": "ReddotVulnTunner"},
+            "7": {"name": "Identity Matcher", "desc": "Deep SSL & Favicon Fingerprinting.", "file": "reddot_fingerprint", "class": "ReddotFingerprint"},
         }
 
     def banner(self):
@@ -29,7 +30,7 @@ class ReddotFramework:
     ██║  ██║███████╗██████╔╝██████╔╝╚██████╔╝   ██║   
     ╚═╝  ╚═╝╚══════╝╚═════╝ ╚═════╝  ╚═════╝    ╚═╝
     {Fore.WHITE}      [ MULTI-FUNCTION RECON FRAMEWORK ]
-    {Fore.YELLOW}      [ DEVELOPER: {self.developer} | VERSION: 3.0 ]
+    {Fore.YELLOW}      [ DEVELOPER: {self.developer} | VERSION: 7.0-PRO ]
 
     {Fore.CYAN}QUICK START:
     {Fore.WHITE}1. {Fore.YELLOW}set target <domain>{Fore.WHITE} | 2. {Fore.YELLOW}run <number>{Fore.WHITE} | 3. {Fore.YELLOW}back/clear{Fore.WHITE}
@@ -50,15 +51,22 @@ class ReddotFramework:
 
         mod_info = self.MODULE_MAP[choice]
         try:
-            # Dynamic Import: Memanggil file hanya saat dibutuhkan (Licin!)
+            # Dynamic Import
             module = importlib.import_module(mod_info['file'])
             instance_class = getattr(module, mod_info['class'])
             
-            # Menjalankan modul
             print(f"{Fore.CYAN}[*] Launching {mod_info['name']}...")
-            instance = instance_class(self.target)
+
+            # Penyesuaian khusus untuk Module 7 (Butuh input file IP)
+            if choice == "7":
+                ip_file = input(f"{Fore.YELLOW}[?] Path to Candidate IP List (e.g., ips.txt): {Fore.WHITE}").strip()
+                if not os.path.exists(ip_file):
+                    print(f"{Fore.RED}[!] Error: File '{ip_file}' not found."); return
+                instance = instance_class(self.target, ip_file)
+            else:
+                instance = instance_class(self.target)
             
-            # Menyesuaikan cara panggil tiap modul (IP Scanner butuh .scan, yang lain .run)
+            # Menjalankan modul berdasarkan method yang tersedia
             if hasattr(instance, 'run'): instance.run()
             elif hasattr(instance, 'scan'): instance.scan(self.target)
             elif hasattr(instance, 'check'): instance.check()

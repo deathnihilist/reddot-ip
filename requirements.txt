@@ -1,4 +1,0 @@
-shodan
-censys
-requests
-colorama
