@@ -3,7 +3,9 @@ import urllib3
 import concurrent.futures
 from colorama import Fore, init
 import os
-import threading  # Ditambahkan untuk mekanisme Locking
+import threading
+import sys
+from itertools import islice
 
 # Suppress SSL Warnings
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -65,8 +67,6 @@ class ReddotVulnTunner:
                     print(f"    AI_ACTION  : Attempt directory traversal, extension fuzzing, or auth bypass.")
                     print(f"{Fore.YELLOW}----------------------------------------------------------------------------------{Fore.WHITE}")
 
-                # Catatan: Log 404 sengaja diproses diam-diam agar terminal tidak banjir jutaan baris.
-
         except requests.exceptions.ConnectionError:
             with self.log_lock:
                 self.stats["Errors"] += 1
@@ -79,7 +79,6 @@ class ReddotVulnTunner:
         except Exception as e:
             with self.log_lock:
                 self.stats["Errors"] += 1
-                # Abaikan timeout error murni agar tidak merusak antarmuka log
                 pass
         return False
 
@@ -87,37 +86,65 @@ class ReddotVulnTunner:
         print(f"\n{Fore.RED}--- [ WRAITH VULN ENGINE : FULL VERBOSE MODE ] ---")
         print(f"{Fore.CYAN}[*] Targeting: {self.base_url}\n")
         
-        if os.path.exists(self.master_file):
-            print(f"{Fore.YELLOW}[*] Master file detected! Loading 6.4 Million payloads...")
-            
-            def probe_wrapper(path):
-                p = path if path.startswith('/') else '/' + path
-                return self.probe("Master", p)
-            
-            # 100 workers aman karena print log sudah dikunci oleh mutex lock
-            with concurrent.futures.ThreadPoolExecutor(max_workers=100) as executor:
+        try:
+            if os.path.exists(self.master_file):
+                print(f"{Fore.YELLOW}[*] Master file detected! Processing in chunks to save memory...")
+                
+                def probe_wrapper(path):
+                    p = path if path.startswith('/') else '/' + path
+                    return self.probe("Master", p)
+                
+                chunk_size = 3000
+                total_scanned = 0
+
                 with open(self.master_file, 'r', encoding='utf-8', errors='ignore') as f:
-                    paths = (line.strip() for line in f if line.strip())
-                    list(executor.map(probe_wrapper, paths))
-                    
-        else:
-            print(f"{Fore.CYAN}[*] Master file not found. Using your original hardcoded payloads...")
-            tasks = []
-            for cat, paths in self.payloads.items():
-                for path in paths:
-                    tasks.append((cat, path))
+                    while True:
+                        # Ambil 3000 baris selanjutnya
+                        chunk = list(islice(f, chunk_size))
+                        if not chunk:
+                            break # Berhenti jika file sudah habis dibaca
+                            
+                        paths = [line.strip() for line in chunk if line.strip()]
+                        
+                        # Jalankan thread hanya untuk 3000 baris ini
+                        with concurrent.futures.ThreadPoolExecutor(max_workers=50) as executor:
+                            list(executor.map(probe_wrapper, paths))
+                            
+                        total_scanned += len(paths)
+                        
+                        # Pertanyaan setiap 3000 payloads selesai
+                        if len(chunk) == chunk_size:
+                            print(f"\n{Fore.CYAN}[?] System Paused. {total_scanned} payloads have been scanned.")
+                            choice = input(f"{Fore.YELLOW}Do you want to continue this scan? [Y/N]: {Fore.WHITE}").strip().upper()
+                            if choice == 'N':
+                                print(f"{Fore.RED}[!] Scan aborted by user.{Fore.WHITE}")
+                                break
+                            else:
+                                print(f"{Fore.GREEN}[+] Resuming scan...\n{Fore.WHITE}")
+                        
+            else:
+                print(f"{Fore.CYAN}[*] Master file not found. Using your original hardcoded payloads...")
+                tasks = []
+                for cat, paths in self.payloads.items():
+                    for path in paths:
+                        tasks.append((cat, path))
 
-            with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
-                list(executor.map(lambda p: self.probe(*p), tasks))
+                with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
+                    list(executor.map(lambda p: self.probe(*p), tasks))
 
-        # Final Report Summary (Semua data tercatat sempurna)
-        print(f"\n{Fore.CYAN}--- [ SCAN SUMMARY ] ---")
-        print(f"{Fore.GREEN}Success (200)   : {self.stats['200']}")
-        print(f"{Fore.YELLOW}Unauthorized (401) : {self.stats['401']}")
-        print(f"{Fore.YELLOW}Forbidden (403) : {self.stats['403']}")
-        print(f"{Fore.WHITE}Not Found (404) : {self.stats['404']}")
-        print(f"{Fore.RED}Failures/Errors : {self.stats['Errors']}")
-        print(f"{Fore.CYAN}--- [ SCAN COMPLETE ] ---\n")
+        except KeyboardInterrupt:
+            # Handle Ctrl+C / Ctrl+X dengan rapi
+            print(f"\n{Fore.RED}[!] Scan forcefully interrupted by user. Cleaning up processes...{Fore.WHITE}")
+        
+        finally:
+            # Final Report Summary tetap muncul meskipun di-cancel
+            print(f"\n{Fore.CYAN}--- [ SCAN SUMMARY ] ---")
+            print(f"{Fore.GREEN}Success (200)   : {self.stats['200']}")
+            print(f"{Fore.YELLOW}Unauthorized (401) : {self.stats['401']}")
+            print(f"{Fore.YELLOW}Forbidden (403) : {self.stats['403']}")
+            print(f"{Fore.WHITE}Not Found (404) : {self.stats['404']}")
+            print(f"{Fore.RED}Failures/Errors : {self.stats['Errors']}")
+            print(f"{Fore.CYAN}--- [ SCAN COMPLETE ] ---\n")
 
 if __name__ == "__main__":
     t = input("Target: ")
